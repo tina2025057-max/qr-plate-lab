@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="把網址轉成可直接 3D 列印的 QR Code 標牌，支援 STL 下載。" />
+    <title>QR Plate Lab｜Lucky Coding 樂技數位教育</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="Lucky Coding QR Plate Lab 首頁">
+          <img class="brand-logo" src="assets/lucky-coding-logo.png" alt="Lucky Coding 樂技數位教育" />
+          <span class="brand-title">LUCKY CODING <small>QR PLATE LAB</small></span>
+        </a>
+        <div class="topbar-meta"><span class="live-dot"></span> 樂技數位教育 <span class="slash">/</span> 3D QR MAKER</div>
+      </header>
+
+      <main id="top">
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">LUCKY CODING · MAKER LAB</p>
+            <h1>讓一個網址，<br /><span>變成摸得到的入口。</span></h1>
+            <p class="hero-lede">輸入網址，調整標牌比例與浮雕高度，立即產出可送進切片軟體的 STL。<br />適合桌牌、展場、包裝與工作室標示。</p>
+            <div class="hero-notes">
+              <span><b>01</b> 不需登入</span>
+              <span><b>02</b> 瀏覽器端處理</span>
+              <span><b>03</b> 下載即列印</span>
+            </div>
+          </div>
+          <div class="hero-art hero-art-portrait">
+            <img class="hero-person" src="assets/hero-presenter.png" alt="手持平板並展示標牌的女性" fetchpriority="high" decoding="async" />
+            <div class="hero-qr" aria-hidden="true"><span></span></div>
+            <div class="hero-tag" aria-hidden="true">SCAN / MAKE / SHARE</div>
+          </div>
+        </section>
+
+        <section class="workspace-grid" aria-label="QR Code 3D 產生器">
+          <div class="panel controls-panel">
+            <div class="panel-heading">
+              <div><p class="eyebrow">INPUT / OUTPUT</p><h2>建立你的 QR 標牌</h2></div>
+              <span class="step-chip">STEP 01—03</span>
+            </div>
+
+            <form id="generator-form">
+              <label class="field-label" for="url-input">要轉成 QR Code 的網址</label>
+              <div class="url-field">
+                <span class="url-prefix">https://</span>
+                <input id="url-input" name="url" type="text" value="example.com/your-link" autocomplete="off" spellcheck="false" aria-describedby="url-help" />
+              </div>
+              <p id="url-help" class="field-help">支援完整網址；若未輸入 https://，系統會自動補上。</p>
+              <p id="form-error" class="form-error" role="alert"></p>
+
+              <div class="section-rule"><span>BASE SHAPE</span></div>
+              <div class="shape-picker" role="group" aria-label="底板造型">
+                <button class="shape-option is-active" type="button" data-shape="flat"><span class="shape-glyph shape-glyph-flat"></span><strong>原版平牌</strong><small>FLAT PLATE</small></button>
+                <button class="shape-option" type="button" data-shape="standee"><span class="shape-glyph shape-glyph-standee"></span><strong>桌上立牌</strong><small>DESK STAND</small></button>
+                <button class="shape-option" type="button" data-shape="keychain"><span class="shape-glyph shape-glyph-keychain"></span><strong>鑰匙圈</strong><small>KEY RING</small></button>
+              </div>
+              <p id="standee-note" class="field-help shape-note" hidden>桌上立牌包含牌面與同寬插槽底座；牌面底部會自動預留插入區。下載時會取得含兩個 STL 的 ZIP。</p>
+              <input id="base-shape" type="hidden" value="flat" />
+              <div id="keyring-hole-row" class="control-row select-row" hidden>
+                <label for="keyring-hole-position">鑰匙圈孔位</label>
+                <select id="keyring-hole-position">
+                  <option value="left">左</option>
+                  <option value="center" selected>中</option>
+                  <option value="right">右</option>
+                </select>
+              </div>
+
+              <div class="section-rule"><span>PLATE PARAMETERS</span></div>
+              <div class="control-row">
+                <label for="plate-width">① 底盤寬度 <output id="plate-width-value">60</output><small>mm</small></label>
+                <input id="plate-width" type="range" min="30" max="150" step="1" value="60" />
+              </div>
+              <div class="control-row">
+                <label for="plate-height">底盤高度 <output id="plate-height-value">60</output><small>mm</small></label>
+                <input id="plate-height" type="range" min="30" max="150" step="1" value="60" />
+              </div>
+              <p id="layout-warning" class="field-help layout-warning" role="status" hidden></p>
+              <div class="control-row">
+                <label for="white-size">② QR 白色底尺寸 <output id="white-size-value">45.0</output><small>mm</small></label>
+                <input id="white-size" type="range" min="16" max="140" step="0.5" value="45" />
+              </div>
+              <div class="control-row">
+                <label for="white-thickness">QR 白色底厚度 <output id="white-thickness-value">0.5</output><small>mm</small></label>
+                <input id="white-thickness" type="range" min="0.2" max="3" step="0.1" value="0.5" />
+              </div>
+              <div class="control-row">
+                <label for="qr-size">③ QR Code 尺寸 <output id="qr-size-value">35.0</output><small>mm</small></label>
+                <input id="qr-size" type="range" min="12" max="140" step="0.5" value="35" />
+              </div>
+              <div class="control-row">
+                <label for="qr-margin">QR 距白底邊緣 <output id="qr-margin-value">5.0</output><small>mm／每側</small></label>
+                <input id="qr-margin" type="range" min="2" max="15" step="0.25" value="5" />
+              </div>
+              <p id="quiet-zone-note" class="field-help compact-help">QR 四周留白約 4 個模組，建議至少 4 個模組。</p>
+              <div class="control-row">
+                <label for="base-thickness">底板厚度 <output id="base-thickness-value">3.0</output><small>mm</small></label>
+                <input id="base-thickness" type="range" min="1.6" max="8" step="0.2" value="3" />
+              </div>
+              <div class="control-row select-row">
+                <label for="qr-mode">QR 立體方式</label>
+                <select id="qr-mode">
+                  <option value="raised">凸起 QR</option>
+                  <option value="recessed">凹入 QR</option>
+                </select>
+              </div>
+              <div class="control-row">
+                <label for="qr-depth">QR 深度 <output id="qr-depth-value">1.2</output><small>mm</small></label>
+                <input id="qr-depth" type="range" min="0.4" max="3" step="0.1" value="1.2" />
+              </div>
+
+              <div class="section-rule"><span>EXTRA DETAILS</span></div>
+              <div class="control-row select-row">
+                <label for="icon-select">加入小圖示</label>
+                <select id="icon-select">
+                  <option value="none">不加入圖示</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="globe">地球 Globe</option>
+                  <option value="thumb">大拇指（讚）</option>
+                  <option value="peace">兩隻手指（V 手勢）</option>
+                </select>
+              </div>
+              <div class="control-row select-row">
+                <label for="icon-position">圖示位置</label>
+                <select id="icon-position">
+                  <option value="above-left">QR 上方｜左</option>
+                  <option value="above-center">QR 上方｜中</option>
+                  <option value="above-right">QR 上方｜右</option>
+                  <option value="below-left">QR 下方｜左</option>
+                  <option value="below-center" selected>QR 下方｜中</option>
+                  <option value="below-right">QR 下方｜右</option>
+                </select>
+              </div>
+              <div class="control-row">
+                <label for="icon-height">圖案鏤空深度 <output id="icon-height-value">1.0</output><small>mm</small></label>
+                <input id="icon-height" type="range" min="0.4" max="2.5" step="0.1" value="1" />
+              </div>
+              <p class="field-help compact-help">白色圓牌上的圖案會挖空，露出下方的底板顏色。</p>
+              <div class="control-row text-row">
+                <label for="text-input">英文字樣 <output id="text-count">0 / 18</output></label>
+                <input id="text-input" class="text-input" type="text" maxlength="18" placeholder="例如 LUCKY!" autocomplete="off" spellcheck="false" />
+              </div>
+              <div class="control-row select-row">
+                <label for="text-position">文字位置</label>
+                <select id="text-position">
+                  <option value="after-icon">圖示後方</option>
+                  <option value="next-center" selected>下一行置中</option>
+                  <option value="next-left">下一行靠左</option>
+                  <option value="next-right">下一行靠右</option>
+                </select>
+              </div>
+                <div class="control-row select-row">
+                  <label for="text-font">字型</label>
+                  <select id="text-font">
+                    <option value="Arial" selected>Arial（標準無襯線）</option>
+                    <option value="Arial Black">Arial Black（粗黑）</option>
+                    <option value="Verdana">Verdana（易讀）</option>
+                    <option value="Tahoma">Tahoma（俐落）</option>
+                    <option value="Trebuchet MS">Trebuchet MS（圓潤）</option>
+                    <option value="Georgia">Georgia（襯線）</option>
+                    <option value="Times New Roman">Times New Roman（新細明體風格）</option>
+                    <option value="Courier New">Courier New（等寬）</option>
+                    <option value="Impact">Impact（窄粗體）</option>
+                    <option value="Comic Sans MS">Comic Sans MS（手寫感）</option>
+                  </select>
+                </div>
+              <div class="control-row">
+                <label for="text-size">文字大小 <output id="text-size-value">5.0</output><small>mm</small></label>
+                <input id="text-size" type="range" min="3" max="10" step="0.5" value="5" />
+              </div>
+              <div class="control-row">
+                <label for="text-height">文字厚度 <output id="text-height-value">1.0</output><small>mm</small></label>
+                <input id="text-height" type="range" min="0.4" max="2.5" step="0.1" value="1" />
+              </div>
+                <p class="field-help compact-help">字樣依字型外框製作平滑立體筆畫，不是點陣；支援英文字母、數字、空格與常見符號，10 種字型的預覽與 STL 會同步更新。</p>
+
+              <button class="primary-button" type="submit"><span>生成 QR 標牌</span><span class="arrow">↗</span></button>
+            </form>
+
+            <div class="privacy-note"><span class="lock-icon">⌁</span><span>網址只在你的瀏覽器內轉換，<strong>不會上傳或儲存。</strong></span></div>
+          </div>
+
+          <div class="panel preview-panel">
+            <div class="preview-head"><div><p class="eyebrow">LIVE PREVIEW</p><h2>列印前預覽</h2></div><span id="status-pill" class="status-pill"><i></i> READY</span></div>
+            <div id="preview-stage" class="preview-stage">
+              <svg id="qr-svg" class="qr-export" viewBox="0 0 100 100" aria-hidden="true"></svg>
+              <div class="scene-readout" aria-live="polite">
+                <strong>MODEL DETAILS</strong>
+                <span><i class="readout-base"></i> 底板 <b id="scene-base-size">60 × 60 × 3.0 mm</b></span>
+                <span id="scene-stand-base-row" hidden><i class="readout-stand-base"></i> 插槽底座 <b id="scene-stand-base-size">60 × 48 × 8.0 mm</b></span>
+                <span id="scene-hole-row" hidden><i class="readout-hole"></i> 圓孔 <b id="scene-hole-position">中 · Ø5.0 mm</b></span>
+                <span><i class="readout-white"></i> 白色底 <b id="scene-white-size">45.0 × 45.0 × 0.5 mm</b></span>
+                <span><i class="readout-qr-size"></i> QR 尺寸 <b id="scene-qr-size">35.0 × 35.0 mm</b></span>
+                <span><i class="readout-margin"></i> 邊緣留白 <b id="scene-qr-margin">5.0 mm</b></span>
+                <span><i class="readout-qr"></i> QR <b id="scene-qr-depth">凸起 1.2 mm</b></span>
+                <span id="scene-icon-row"><i class="readout-icon"></i> 圖示 <b id="scene-icon-depth">未加入</b></span>
+                <span id="scene-text-row"><i class="readout-text"></i> 文字 <b id="scene-text-depth">未加入</b></span>
+              </div>
+              <div class="orientation-label">方向參考 · 前</div>
+              <div class="orientation-presets" role="group" aria-label="切換預覽方向">
+                <button type="button" data-view="front" aria-label="查看前面">前</button>
+                <button type="button" data-view="back" aria-label="查看後面">後</button>
+                <button type="button" data-view="left" aria-label="查看左面">左</button>
+                <button type="button" data-view="right" aria-label="查看右面">右</button>
+                <button type="button" data-view="top" aria-label="查看上面">上</button>
+                <button type="button" data-view="bottom" aria-label="查看下面">下</button>
+              </div>
+              <div class="preview-tools" aria-label="預覽控制">
+                <button id="view-reset" class="view-button" type="button" aria-label="重設視角" title="重設視角">↻</button>
+                <button id="view-zoom-out" class="view-button" type="button" aria-label="縮小" title="縮小">−</button>
+                <span id="view-zoom" class="view-zoom">100%</span>
+                <button id="view-zoom-in" class="view-button" type="button" aria-label="放大" title="放大">+</button>
+              </div>
+              <div class="pan-controls" role="group" aria-label="移動標牌位置">
+                <span>移動標牌</span>
+                <div class="pan-pad">
+                  <button type="button" data-pan="up" aria-label="標牌向上移動" title="向上移動">↑</button>
+                  <button type="button" data-pan="left" aria-label="標牌向左移動" title="向左移動">←</button>
+                  <button type="button" id="pan-mode" aria-label="切換拖曳移動模式" aria-pressed="false" title="開啟拖曳移動">✥</button>
+                  <button type="button" data-pan="right" aria-label="標牌向右移動" title="向右移動">→</button>
+                  <button type="button" data-pan="down" aria-label="標牌向下移動" title="向下移動">↓</button>
+                </div>
+              </div>
+              <div class="rotation-hint">拖曳旋轉 360° · 按 ✥ 後拖曳移動 · Shift／右鍵拖曳平移 · 滾輪縮放</div>
+            </div>
+            <div class="preview-footer">
+              <div><span class="tiny-label">QR VERSION</span><strong id="qr-version">—</strong></div>
+              <div><span class="tiny-label">MODULES</span><strong id="qr-modules">—</strong></div>
+              <div><span class="tiny-label">SHAPE</span><strong id="shape-output">FLAT</strong></div>
+            </div>
+            <div class="download-row">
+              <button id="download-stl" class="download-button" type="button" disabled><span>下載 STL</span><span>↓</span></button>
+              <button id="download-svg" class="text-button" type="button" disabled>下載 QR SVG <span>↗</span></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="how-section">
+          <div><p class="eyebrow">FROM LINK TO LAYER</p><h2>輕輕鬆鬆打造<br />專屬 QR 標牌</h2></div>
+          <div class="how-steps">
+            <article><span class="step-number">01</span><h3>貼上網址</h3><p>任何公開網址都可以，系統會先檢查格式。</p></article>
+            <article><span class="step-number">02</span><h3>調整比例</h3><p>控制尺寸、底板與 QR 凸起，對應你的列印需求。</p></article>
+            <article><span class="step-number">03</span><h3>下載列印</h3><p>取得 ASCII STL，匯入 Bambu Studio 或其他切片軟體。</p></article>
+          </div>
+        </section>
+
+        <section class="print-note">
+          <span class="print-note-icon">⌘</span>
+          <div><strong>列印小提示</strong><p>建議 QR 模組至少 1.2 mm 寬、凸起高度至少 0.8 mm；使用高對比的底板與凸起材料，掃描成功率會更穩定。</p></div>
+          <span class="print-note-code">TOLERANCE / 0.20</span>
+        </section>
+      </main>
+
+      <footer class="footer">© 2026 Lucky Coding</footer>
+    </div>
+  </body>
+</html>
